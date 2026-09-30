@@ -16,16 +16,27 @@ class ConfirmationController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'attending' => ['required', 'boolean'],
-            'guests' => ['required', 'integer', 'min:0', 'max:10'],
+            'companions' => ['nullable', 'array', 'max:10'],
+            'companions.*' => ['required', 'string', 'max:120'],
             'message' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'name.required' => 'Informe seu nome completo.',
+            'companions.max' => 'Você pode levar no máximo 10 acompanhantes.',
+            'companions.*.required' => 'Informe o nome do acompanhante.',
+            'companions.*.max' => 'O nome do acompanhante pode ter no máximo 120 caracteres.',
         ]);
 
-        // Quem não vai não ocupa lugares.
-        if (! $validated['attending']) {
-            $validated['guests'] = 0;
-        }
+        $companions = $validated['attending']
+            ? array_values(array_map(fn (string $name) => trim($name), $validated['companions'] ?? []))
+            : [];
 
-        Confirmation::create($validated);
+        Confirmation::create([
+            'name' => trim($validated['name']),
+            'attending' => $validated['attending'],
+            'guests' => $validated['attending'] ? 1 + count($companions) : 0,
+            'companions' => $companions,
+            'message' => $validated['message'] ?? null,
+        ]);
 
         return redirect()->route('presentes', ['origem' => 'confirmar'])->with('celebration', true);
     }

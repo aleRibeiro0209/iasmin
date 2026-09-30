@@ -36,13 +36,14 @@ class GiftItemController extends Controller
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, items: Collection<int, array{id: int, name: string}>}>
+     * @return Collection<int, array{id: int, name: string, items: Collection<int, array{id: int, name: string, description: string|null}>}>
      */
     private function groupedCategories(): Collection
     {
         return GiftCategory::query()
-            ->with(['items' => fn ($query) => $query->orderBy('name')->select(['id', 'gift_category_id', 'name'])])
+            ->with(['items' => fn ($query) => $query->orderBy('name')->orderBy('id')->select(['id', 'gift_category_id', 'name', 'description'])])
             ->orderBy('name')
+            ->orderBy('id')
             ->get(['id', 'name'])
             ->map(fn (GiftCategory $category) => [
                 'id' => $category->id,
@@ -50,6 +51,7 @@ class GiftItemController extends Controller
                 'items' => $category->items->map(fn (GiftItem $item) => [
                     'id' => $item->id,
                     'name' => $item->name,
+                    'description' => $item->description,
                 ])->values(),
             ])
             ->filter(fn (array $category) => $category['items']->isNotEmpty())
@@ -62,15 +64,18 @@ class GiftItemController extends Controller
     public function admin(): Response
     {
         return Inertia::render('Gifts', [
-            'categories' => GiftCategory::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => GiftCategory::query()->orderBy('name')->orderBy('id')->get(['id', 'name']),
             'gifts' => GiftItem::query()
                 ->with('category:id,name')
-                ->latest()
-                ->paginate(15, ['id', 'name', 'gift_category_id', 'created_at'])
+                ->orderBy('name')
+                ->orderBy('id')
+                ->paginate(15, ['id', 'name', 'description', 'gift_category_id'])
                 ->withQueryString()
                 ->through(fn (GiftItem $item) => [
                     'id' => $item->id,
                     'name' => $item->name,
+                    'description' => $item->description,
+                    'gift_category_id' => $item->gift_category_id,
                     'category' => $item->category?->name,
                 ]),
         ]);
@@ -78,17 +83,14 @@ class GiftItemController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'gift_category_id' => ['required', 'integer', 'exists:gift_categories,id'],
-        ], [
-            'name.required' => 'Informe o nome do item.',
-            'name.max' => 'O nome pode ter no máximo 120 caracteres.',
-            'gift_category_id.required' => 'Escolha uma categoria.',
-            'gift_category_id.exists' => 'Escolha uma categoria válida.',
-        ]);
+        GiftItem::create($this->validatedGift($request));
 
-        GiftItem::create($validated);
+        return back();
+    }
+
+    public function update(Request $request, GiftItem $giftItem): RedirectResponse
+    {
+        $giftItem->update($this->validatedGift($request));
 
         return back();
     }
@@ -98,5 +100,28 @@ class GiftItemController extends Controller
         $giftItem->delete();
 
         return back();
+    }
+
+    /**
+     * @return array{name: string, description: string|null, gift_category_id: int}
+     */
+    private function validatedGift(Request $request): array
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'gift_category_id' => ['required', 'integer', 'exists:gift_categories,id'],
+        ], [
+            'name.required' => 'Informe o nome do item.',
+            'name.max' => 'O nome pode ter no máximo 120 caracteres.',
+            'description.max' => 'A descrição pode ter no máximo 500 caracteres.',
+            'gift_category_id.required' => 'Escolha uma categoria.',
+            'gift_category_id.exists' => 'Escolha uma categoria válida.',
+        ]);
+
+        $description = trim((string) ($validated['description'] ?? ''));
+        $validated['description'] = $description !== '' ? $description : null;
+
+        return $validated;
     }
 }

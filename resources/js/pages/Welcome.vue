@@ -80,7 +80,7 @@ type Polaroid = {
 };
 
 const heroPhoto: Polaroid = {
-    caption: 'nossa borboleta',
+    caption: 'Nossa borboleta',
     gradient: 'from-iasmin-lilac via-iasmin-petal to-iasmin-mint',
     stroke: '#6A0099',
     label: 'Foto da Iasmin',
@@ -125,10 +125,10 @@ const countdown = computed(() => {
 });
 
 const photos = [
-    { caption: 'pequenininha', gradient: 'from-iasmin-lilac to-iasmin-petal', stroke: '#6A0099', label: 'Foto 1', tapeClass: 'bg-iasmin-mint/90 -rotate-6', rotate: '-rotate-[4deg]', offset: '', src: '/images/pequenininha.jpg', focus: 'object-center' },
-    { caption: 'sorrisos', gradient: 'from-iasmin-mint to-iasmin-sky', stroke: '#005FBF', label: 'Foto 2', tapeClass: 'bg-iasmin-lilac/80 rotate-[5deg]', rotate: 'rotate-3', offset: 'mt-[18px]', src: '/images/sorrisos.jpg', focus: 'object-[center_32%]' },
-    { caption: 'minha essência', gradient: 'from-iasmin-petal to-iasmin-mint', stroke: '#6A0099', label: 'Foto 3', tapeClass: 'bg-iasmin-sage/70 -rotate-3', rotate: 'rotate-2', offset: '', src: '/images/minha-essencia.jpg', focus: 'object-[center_34%]' },
-    { caption: '15 primaveras', gradient: 'from-iasmin-lilac to-iasmin-mint', stroke: '#6A0099', label: 'Foto 4', tapeClass: 'bg-iasmin-lilac/80 rotate-[4deg]', rotate: '-rotate-3', offset: 'mt-[18px]', src: '/images/15-primaveras.jpg', focus: 'object-center' },
+    { caption: 'Pequenina', gradient: 'from-iasmin-lilac to-iasmin-petal', stroke: '#6A0099', label: 'Foto 1', tapeClass: 'bg-iasmin-mint/90 -rotate-6', rotate: '-rotate-[4deg]', offset: '', src: '/images/pequenininha.jpg', focus: 'object-center' },
+    { caption: 'Entre olhares', gradient: 'from-iasmin-mint to-iasmin-sky', stroke: '#005FBF', label: 'Foto 2', tapeClass: 'bg-iasmin-lilac/80 rotate-[5deg]', rotate: 'rotate-3', offset: 'mt-[18px]', src: '/images/sorrisos.jpg', focus: 'object-[center_32%]' },
+    { caption: 'Entre sorrisos', gradient: 'from-iasmin-petal to-iasmin-mint', stroke: '#6A0099', label: 'Foto 3', tapeClass: 'bg-iasmin-sage/70 -rotate-3', rotate: 'rotate-2', offset: '', src: '/images/minha-essencia.jpg', focus: 'object-[center_34%]' },
+    { caption: 'Minha essência', gradient: 'from-iasmin-lilac to-iasmin-mint', stroke: '#6A0099', label: 'Foto 4', tapeClass: 'bg-iasmin-lilac/80 rotate-[4deg]', rotate: '-rotate-3', offset: 'mt-[18px]', src: '/images/15-primaveras.jpg', focus: 'object-center' },
 ];
 </script>
 
@@ -191,7 +191,7 @@ const photos = [
                 </button>
 
                 <p class="iasmin-hero-quote max-w-[318px] text-base italic leading-[1.55] text-iasmin-ink lg:max-w-[28rem] lg:text-[17px]">
-                    A borboleta mais linda do nosso jardim vai completar 15 anos, e você não pode ficar de fora!
+                    A borboleta mais linda do nosso jardim vai completar 15 anos e você não pode ficar de fora!
                 </p>
 
                 <Link

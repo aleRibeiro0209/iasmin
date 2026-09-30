@@ -7,7 +7,7 @@ import IasminDecor, { type DecorItem } from '@/components/iasmin/IasminDecor.vue
 export interface GiftCategoryGroup {
     id: number;
     name: string;
-    items: { id: number; name: string }[];
+    items: { id: number; name: string; description: string | null }[];
 }
 
 withDefaults(
@@ -68,7 +68,7 @@ const pageDecor: DecorItem[] = [
             <div class="flex flex-col items-center gap-2">
                 <h1 class="font-script text-[52px] leading-none text-iasmin-purple lg:text-7xl">Lista de presentes</h1>
                 <p class="max-w-[320px] text-[15px] leading-relaxed text-iasmin-ink lg:max-w-md">
-                    Se quiser presentear a Iasmin, estes são os itens que ela vai amar ganhar.
+                    Se quiser presentear a Iasmin, abaixo estão algumas sugestões de items que ela amaria ganhar!
                 </p>
             </div>
 
@@ -79,9 +79,12 @@ const pageDecor: DecorItem[] = [
                         <li
                             v-for="gift in category.items"
                             :key="gift.id"
-                            class="rounded-[22px] border border-iasmin-lilac bg-white px-5 py-4 text-base font-semibold text-iasmin-ink shadow-[0_8px_20px_rgba(90,30,140,0.08)]"
+                            class="rounded-[22px] border border-iasmin-lilac bg-white px-5 py-4 text-left text-iasmin-ink shadow-[0_8px_20px_rgba(90,30,140,0.08)]"
                         >
-                            {{ gift.name }}
+                            <p class="text-base font-semibold">{{ gift.name }}</p>
+                            <p v-if="gift.description" class="mt-1 text-sm font-normal leading-relaxed text-iasmin-mauve">
+                                {{ gift.description }}
+                            </p>
                         </li>
                     </ul>
                 </section>

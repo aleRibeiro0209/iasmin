@@ -23,27 +23,85 @@ const pageDecor: DecorItem[] = [
 ];
 
 const going = ref<'sim' | 'nao'>('sim');
+const bringing = ref<'sim' | 'nao' | null>(null);
+const companionNames = ref<string[]>([]);
+const companionChoiceError = ref('');
+const reviewOpen = ref(false);
 
 const form = useForm({
     name: '',
     attending: true,
-    guests: 1,
+    companions: [] as string[],
     message: '',
 });
 
 const isYes = computed(() => going.value === 'sim');
 const isNo = computed(() => going.value === 'nao');
+const bringsCompanion = computed(() => isYes.value && bringing.value === 'sim');
+const totalPeople = computed(() => (isYes.value ? 1 + (bringsCompanion.value ? companionNames.value.length : 0) : 0));
+
+const resizeCompanions = (count: number) => {
+    const next = Math.min(10, Math.max(1, count));
+    const names = companionNames.value.slice(0, next);
+
+    while (names.length < next) {
+        names.push('');
+    }
+
+    companionNames.value = names;
+};
 
 const choose = (value: 'sim' | 'nao') => {
     going.value = value;
     form.attending = value === 'sim';
+
+    if (value === 'nao') {
+        bringing.value = null;
+        companionChoiceError.value = '';
+    }
 };
-const inc = () => (form.guests = Math.min(10, form.guests + 1));
-const dec = () => (form.guests = Math.max(1, form.guests - 1));
-const submit = () =>
+
+const chooseCompanion = (value: 'sim' | 'nao') => {
+    bringing.value = value;
+    companionChoiceError.value = '';
+
+    if (value === 'sim') {
+        resizeCompanions(Math.max(companionNames.value.length, 1));
+    }
+};
+
+const inc = () => resizeCompanions(companionNames.value.length + 1);
+const dec = () => resizeCompanions(companionNames.value.length - 1);
+
+const companionError = (index: number) =>
+    (form.errors as Record<string, string | undefined>)[`companions.${index}`];
+
+const openReview = () => {
+    if (isYes.value && bringing.value === null) {
+        companionChoiceError.value = 'Selecione se irá levar algum acompanhante.';
+        return;
+    }
+
+    companionChoiceError.value = '';
+    form.attending = isYes.value;
+    form.companions = bringsCompanion.value ? companionNames.value.map((name) => name.trim()) : [];
+    reviewOpen.value = true;
+};
+
+const confirmSubmit = () => {
     form
-        .transform((data) => ({ ...data, guests: data.attending ? data.guests : 0 }))
-        .post('/confirmar');
+        .transform((data) => ({
+            name: data.name,
+            attending: data.attending,
+            companions: data.attending ? data.companions : [],
+            message: data.message,
+        }))
+        .post('/confirmar', {
+            onError: () => {
+                reviewOpen.value = false;
+            },
+        });
+};
 
 // Classes dos botões "Sim/Não" conforme seleção.
 const choiceClass = (active: boolean) =>
@@ -102,7 +160,7 @@ const reminders = [
                 <!-- FORMULÁRIO -->
                 <form
                     class="flex w-full flex-col gap-[18px] rounded-[26px] border border-iasmin-lilac bg-white p-5 shadow-[0_16px_36px_rgba(90,30,140,0.12)] lg:max-w-[440px] lg:p-6"
-                    @submit.prevent="submit"
+                    @submit.prevent="openReview"
                 >
                     <div class="flex flex-col gap-2">
                         <label for="rsvp-nome" class="text-sm font-semibold text-iasmin-ink">Seu nome completo</label>
@@ -139,26 +197,67 @@ const reminders = [
                         </div>
                     </div>
 
-                    <div v-if="isYes" class="flex items-center justify-between gap-3">
-                        <span class="w-[150px] text-sm font-semibold text-iasmin-ink">Quantas pessoas, contando com você?</span>
-                        <div class="flex items-center gap-3">
+                    <div v-if="isYes" class="flex flex-col gap-2">
+                        <span class="text-sm font-semibold text-iasmin-ink">Irá levar algum acompanhante?</span>
+                        <div class="grid grid-cols-2 gap-2.5">
                             <button
                                 type="button"
-                                aria-label="Diminuir"
-                                class="h-11 w-11 rounded-full border-[1.5px] border-iasmin-violet bg-white text-[22px] leading-none text-iasmin-purple"
-                                @click="dec"
+                                class="h-[52px] rounded-[14px] border-[1.5px] text-[15px] font-semibold transition-colors"
+                                :class="choiceClass(bringing === 'sim')"
+                                @click="chooseCompanion('sim')"
                             >
-                                −
+                                Sim
                             </button>
-                            <span class="w-[30px] text-center font-display text-[28px] font-bold text-iasmin-purple">{{ form.guests }}</span>
                             <button
                                 type="button"
-                                aria-label="Aumentar"
-                                class="h-11 w-11 rounded-full bg-iasmin-purple text-[22px] leading-none text-white"
-                                @click="inc"
+                                class="h-[52px] rounded-[14px] border-[1.5px] text-[15px] font-semibold transition-colors"
+                                :class="choiceClass(bringing === 'nao')"
+                                @click="chooseCompanion('nao')"
                             >
-                                +
+                                Não
                             </button>
+                        </div>
+                        <p v-if="companionChoiceError" class="text-[13px] text-red-500">{{ companionChoiceError }}</p>
+                    </div>
+
+                    <div v-if="bringsCompanion" class="flex flex-col gap-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="w-[170px] text-sm font-semibold text-iasmin-ink">Quantas pessoas irão te acompanhar?</span>
+                            <div class="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    aria-label="Diminuir"
+                                    class="h-11 w-11 rounded-full border-[1.5px] border-iasmin-violet bg-white text-[22px] leading-none text-iasmin-purple"
+                                    @click="dec"
+                                >
+                                    −
+                                </button>
+                                <span class="w-[30px] text-center font-display text-[28px] font-bold text-iasmin-purple">{{ companionNames.length }}</span>
+                                <button
+                                    type="button"
+                                    aria-label="Aumentar"
+                                    class="h-11 w-11 rounded-full bg-iasmin-purple text-[22px] leading-none text-white"
+                                    @click="inc"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-for="(name, index) in companionNames" :key="index" class="flex flex-col gap-2">
+                            <label :for="`rsvp-acompanhante-${index}`" class="text-sm font-semibold text-iasmin-ink">
+                                Nome completo (Acompanhante {{ index + 1 }})
+                            </label>
+                            <input
+                                :id="`rsvp-acompanhante-${index}`"
+                                v-model="companionNames[index]"
+                                type="text"
+                                required
+                                maxlength="120"
+                                :placeholder="`Nome do acompanhante ${index + 1}`"
+                                class="h-[50px] rounded-[14px] border-[1.5px] border-iasmin-input bg-iasmin-field px-4 text-base text-iasmin-ink outline-iasmin-violet placeholder:text-iasmin-mauve/60"
+                            />
+                            <p v-if="companionError(index)" class="text-[13px] text-red-500">{{ companionError(index) }}</p>
                         </div>
                     </div>
 
@@ -169,7 +268,7 @@ const reminders = [
                         <textarea
                             id="rsvp-msg"
                             v-model="form.message"
-                            placeholder="Escreva algo carinhoso…"
+                            placeholder="Escreva uma mensagem especial..."
                             class="h-[92px] resize-none rounded-[14px] border-[1.5px] border-iasmin-input bg-iasmin-field px-4 py-3 text-base text-iasmin-ink outline-iasmin-violet placeholder:text-iasmin-mauve/60"
                         />
                     </div>
@@ -209,4 +308,59 @@ const reminders = [
     </div>
 
     <GiftListButton />
+
+    <div
+        v-if="reviewOpen"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-iasmin-ink/40 p-4 sm:items-center"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rsvp-review-title"
+    >
+        <div class="w-full max-w-[440px] rounded-[26px] border border-iasmin-lilac bg-white p-6 shadow-[0_16px_36px_rgba(90,30,140,0.18)]">
+            <h2 id="rsvp-review-title" class="font-script text-4xl leading-none text-iasmin-purple">Confira os dados</h2>
+            <p class="mt-2 text-sm text-iasmin-mauve">Estas informações estão corretas?</p>
+
+            <dl class="mt-5 flex flex-col gap-3 text-sm">
+                <div>
+                    <dt class="font-semibold text-iasmin-ink">Nome</dt>
+                    <dd class="text-iasmin-ink">{{ form.name }}</dd>
+                </div>
+                <div>
+                    <dt class="font-semibold text-iasmin-ink">Presença</dt>
+                    <dd class="text-iasmin-ink">{{ isYes ? 'Sim, eu vou!' : 'Não poderei ir' }}</dd>
+                </div>
+                <div v-if="isYes">
+                    <dt class="font-semibold text-iasmin-ink">Acompanhantes</dt>
+                    <dd v-if="form.companions.length" class="text-iasmin-ink">
+                        <ol class="mt-1 list-decimal space-y-1 pl-5">
+                            <li v-for="(companion, index) in form.companions" :key="index">{{ companion }}</li>
+                        </ol>
+                    </dd>
+                    <dd v-else class="text-iasmin-ink">Nenhum acompanhante</dd>
+                </div>
+                <div v-if="isYes">
+                    <dt class="font-semibold text-iasmin-ink">Total de pessoas</dt>
+                    <dd class="text-iasmin-ink">{{ totalPeople }}</dd>
+                </div>
+            </dl>
+
+            <div class="mt-6 grid grid-cols-2 gap-2.5">
+                <button
+                    type="button"
+                    class="h-12 rounded-full border-[1.5px] border-iasmin-purple text-sm font-semibold text-iasmin-purple"
+                    @click="reviewOpen = false"
+                >
+                    Corrigir
+                </button>
+                <button
+                    type="button"
+                    :disabled="form.processing"
+                    class="h-12 rounded-full bg-iasmin-purple text-sm font-semibold text-white disabled:opacity-60"
+                    @click="confirmSubmit"
+                >
+                    {{ form.processing ? 'Enviando…' : 'Confirmar' }}
+                </button>
+            </div>
+        </div>
+    </div>
 </template>

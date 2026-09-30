@@ -8,6 +8,7 @@ interface Confirmation {
     name: string;
     attending: boolean;
     guests: number;
+    companions: string[] | null;
     message: string | null;
     created_at: string;
 }
@@ -91,7 +92,15 @@ const formatDate = (value: string) =>
                             :key="confirmation.id"
                             class="border-b border-sidebar-border/40 last:border-0 dark:border-sidebar-border"
                         >
-                            <td class="px-4 py-3 font-medium">{{ confirmation.name }}</td>
+                            <td class="px-4 py-3 font-medium">
+                                {{ confirmation.name }}
+                                <p
+                                    v-if="confirmation.companions?.length"
+                                    class="mt-1 text-xs font-normal text-muted-foreground"
+                                >
+                                    {{ confirmation.companions.join(', ') }}
+                                </p>
+                            </td>
                             <td class="px-4 py-3">
                                 <span
                                     class="rounded-full px-2 py-0.5 text-xs font-semibold"

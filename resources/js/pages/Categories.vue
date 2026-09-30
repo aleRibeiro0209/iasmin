@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { Plus, Trash2 } from '@lucide/vue';
+import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AdminPagination, { type Paginator } from '@/components/AdminPagination.vue';
 import InputError from '@/components/InputError.vue';
@@ -37,8 +37,13 @@ defineOptions({
 const page = usePage();
 const deleteError = computed(() => page.props.errors.delete);
 const open = ref(false);
+const editing = ref<Category | null>(null);
 
 const form = useForm({
+    name: '',
+});
+
+const editForm = useForm({
     name: '',
 });
 
@@ -56,6 +61,30 @@ const submit = () => {
         onSuccess: () => {
             open.value = false;
         },
+    });
+};
+
+const startEdit = (category: Category) => {
+    editForm.clearErrors();
+    editForm.name = category.name;
+    editing.value = category;
+};
+
+const closeEdit = () => {
+    editing.value = null;
+    editForm.reset();
+    editForm.clearErrors();
+};
+
+const saveEdit = () => {
+    if (!editing.value) {
+        return;
+    }
+
+    editForm.put(`/categories/${editing.value.id}`, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => closeEdit(),
     });
 };
 
@@ -119,7 +148,7 @@ const remove = (id: number) => {
                     <tr>
                         <th class="px-4 py-3 font-medium">Categoria</th>
                         <th class="px-4 py-3 font-medium">Itens</th>
-                        <th class="px-4 py-3 text-right font-medium">Ação</th>
+                        <th class="px-4 py-3 text-right font-medium">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,22 +162,38 @@ const remove = (id: number) => {
                     >
                         <td class="px-4 py-3 font-medium">{{ category.name }}</td>
                         <td class="px-4 py-3 text-muted-foreground">{{ category.items_count }}</td>
-                        <td class="px-4 py-3 text-right">
-                            <Tooltip>
-                                <TooltipTrigger as-child>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="text-destructive hover:text-destructive"
-                                        aria-label="Remover"
-                                        @click="remove(category.id)"
-                                    >
-                                        <Trash2 />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Remover</TooltipContent>
-                            </Tooltip>
+                        <td class="px-4 py-3">
+                            <div class="flex justify-end gap-1">
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Editar"
+                                            @click="startEdit(category)"
+                                        >
+                                            <Pencil />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Editar</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            class="text-destructive hover:text-destructive"
+                                            aria-label="Remover"
+                                            @click="remove(category.id)"
+                                        >
+                                            <Trash2 />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Remover</TooltipContent>
+                                </Tooltip>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -156,5 +201,34 @@ const remove = (id: number) => {
             </div>
             <AdminPagination :paginator="categories" empty-label="0 categorias" />
         </div>
+
+        <Dialog :open="editing !== null" @update:open="(isOpen) => !isOpen && closeEdit()">
+            <DialogContent>
+                <form class="grid gap-4" @submit.prevent="saveEdit">
+                    <DialogHeader>
+                        <DialogTitle>Editar categoria</DialogTitle>
+                        <DialogDescription>O nome aparece na lista de presentes.</DialogDescription>
+                    </DialogHeader>
+
+                    <div class="grid gap-2">
+                        <Label for="edit-category-name">Nome</Label>
+                        <Input
+                            id="edit-category-name"
+                            v-model="editForm.name"
+                            type="text"
+                            maxlength="120"
+                            placeholder="Nome da categoria"
+                            required
+                        />
+                        <InputError :message="editForm.errors.name" />
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" @click="closeEdit">Cancelar</Button>
+                        <Button type="submit" :disabled="editForm.processing">Salvar</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

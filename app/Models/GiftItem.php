@@ -9,6 +9,7 @@ class GiftItem extends Model
 {
     protected $fillable = [
         'name',
+        'description',
         'gift_category_id',
     ];
 

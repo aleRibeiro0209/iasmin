@@ -10,6 +10,7 @@ class Confirmation extends Model
         'name',
         'attending',
         'guests',
+        'companions',
         'message',
     ];
 
@@ -18,6 +19,7 @@ class Confirmation extends Model
         return [
             'attending' => 'boolean',
             'guests' => 'integer',
+            'companions' => 'array',
         ];
     }
 }

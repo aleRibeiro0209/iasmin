@@ -16,7 +16,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'confirmations' => Confirmation::query()
                 ->latest()
-                ->paginate(15, ['id', 'name', 'attending', 'guests', 'message', 'created_at'])
+                ->paginate(15, ['id', 'name', 'attending', 'guests', 'companions', 'message', 'created_at'])
                 ->withQueryString(),
             'stats' => [
                 'total' => Confirmation::query()->count(),

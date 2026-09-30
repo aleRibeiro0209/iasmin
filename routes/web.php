@@ -20,9 +20,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('categories', [GiftCategoryController::class, 'index'])->name('categories.index');
     Route::post('categories', [GiftCategoryController::class, 'store'])->name('categories.store');
+    Route::put('categories/{giftCategory}', [GiftCategoryController::class, 'update'])->name('categories.update');
     Route::delete('categories/{giftCategory}', [GiftCategoryController::class, 'destroy'])->name('categories.destroy');
     Route::get('gifts', [GiftItemController::class, 'admin'])->name('gifts.index');
     Route::post('gifts', [GiftItemController::class, 'store'])->name('gifts.store');
+    Route::put('gifts/{giftItem}', [GiftItemController::class, 'update'])->name('gifts.update');
     Route::delete('gifts/{giftItem}', [GiftItemController::class, 'destroy'])->name('gifts.destroy');
 });
 
