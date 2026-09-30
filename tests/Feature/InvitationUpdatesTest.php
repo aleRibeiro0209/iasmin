@@ -7,6 +7,7 @@ use App\Models\GiftCategory;
 use App\Models\GiftItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Date;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -72,6 +73,8 @@ class InvitationUpdatesTest extends TestCase
 
     public function test_rsvp_counts_the_guest_plus_named_companions(): void
     {
+        Date::setTestNow(Date::parse('2026-10-15 12:00:00', 'America/Sao_Paulo'));
+
         $this->post(route('confirmar.store'), [
             'name' => 'Maria Souza',
             'attending' => true,
@@ -109,6 +112,43 @@ class InvitationUpdatesTest extends TestCase
         $this->assertFalse($declined->attending);
         $this->assertSame(0, $declined->guests);
         $this->assertSame([], $declined->companions);
+    }
+
+    public function test_rsvp_closes_after_23_59_on_october_twentieth(): void
+    {
+        Date::setTestNow(Date::parse('2026-10-20 23:59:59', 'America/Sao_Paulo'));
+
+        $this->get(route('confirmar'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('closed', false));
+
+        $this->post(route('confirmar.store'), [
+            'name' => 'Antes do prazo',
+            'attending' => true,
+            'companions' => [],
+        ])->assertRedirect(route('presentes', ['origem' => 'confirmar']));
+
+        Date::setTestNow(Date::parse('2026-10-21 00:00:00', 'America/Sao_Paulo'));
+
+        $this->get(route('confirmar'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('closed', true));
+
+        $this->post(route('confirmar.store'), [
+            'name' => 'Depois do prazo',
+            'attending' => true,
+            'companions' => [],
+        ])->assertRedirect(route('confirmar'))
+            ->assertSessionHasErrors('closed');
+
+        $this->assertDatabaseMissing('confirmations', ['name' => 'Depois do prazo']);
+    }
+
+    protected function tearDown(): void
+    {
+        Date::setTestNow();
+
+        parent::tearDown();
     }
 
     public function test_admin_can_edit_a_category_and_a_gift(): void

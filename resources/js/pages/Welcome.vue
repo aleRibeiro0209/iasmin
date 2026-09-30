@@ -62,7 +62,7 @@ const confirmDecor: DecorItem[] = [
 // Data da festa: 8 de novembro de 2026, 10h.
 const eventDate = new Date(2026, 10, 8, 10, 0, 0);
 const partyDay = { dd: '08', month: 'Nov', year: '2026', time: '10:00' };
-const rsvpDeadline = '1º de novembro de 2026';
+const rsvpDeadline = '20 de outubro de 2026, às 23:59';
 const partyAddress = 'Rua Araçoiaba da Serra, 10 - Vau Novo - Cajamar, CEP: 07762230';
 const partyMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Rua Araçoiaba da Serra, 10, Vau Novo, Cajamar, SP, 07762-230')}`;
 

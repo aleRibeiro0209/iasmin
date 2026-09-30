@@ -5,14 +5,33 @@ namespace App\Http\Controllers;
 use App\Models\Confirmation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ConfirmationController extends Controller
 {
+    /**
+     * Public confirmation page. After 23:59 on 20 October 2026 in Brasília the form stays closed.
+     */
+    public function create(): Response
+    {
+        return Inertia::render('Confirm', [
+            'closed' => $this->rsvpsAreClosed(),
+        ]);
+    }
+
     /**
      * Save an RSVP coming from the public confirmation form.
      */
     public function store(Request $request): RedirectResponse
     {
+        if ($this->rsvpsAreClosed()) {
+            return redirect()
+                ->route('confirmar')
+                ->withErrors(['closed' => 'As confirmações já encerraram.']);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'attending' => ['required', 'boolean'],
@@ -39,5 +58,15 @@ class ConfirmationController extends Controller
         ]);
 
         return redirect()->route('presentes', ['origem' => 'confirmar'])->with('celebration', true);
+    }
+
+    /**
+     * Confirmations stop at 2026-10-21 00:00 in America/Sao_Paulo, so 23:59 on 20 October is still accepted.
+     */
+    private function rsvpsAreClosed(): bool
+    {
+        $deadline = Date::parse('2026-10-21 00:00:00', 'America/Sao_Paulo');
+
+        return Date::now('America/Sao_Paulo')->greaterThanOrEqualTo($deadline);
     }
 }

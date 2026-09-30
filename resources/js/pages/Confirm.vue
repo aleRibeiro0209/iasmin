@@ -22,6 +22,10 @@ const pageDecor: DecorItem[] = [
     { t: 'f', x: 300, y: 1130, s: 180, r: -8, v: 'purple' },
 ];
 
+defineProps<{
+    closed: boolean;
+}>();
+
 const going = ref<'sim' | 'nao'>('sim');
 const bringing = ref<'sim' | 'nao' | null>(null);
 const companionNames = ref<string[]>([]);
@@ -157,8 +161,18 @@ const reminders = [
             </div>
 
             <div class="flex w-full flex-col items-center gap-[26px] lg:flex-row lg:items-start lg:justify-center lg:gap-8">
+                <div
+                    v-if="closed"
+                    class="flex w-full flex-col items-center justify-center gap-3 rounded-[26px] border border-iasmin-lilac bg-white px-6 py-12 text-center shadow-[0_16px_36px_rgba(90,30,140,0.12)] lg:max-w-[440px]"
+                    role="status"
+                >
+                    <p class="font-script text-[40px] leading-[1.05] text-iasmin-purple lg:text-5xl">As confirmações já encerraram</p>
+                    <p class="max-w-sm text-sm leading-relaxed text-iasmin-mauve">O prazo para responder foi até 23:59 de 20 de outubro.</p>
+                </div>
+
                 <!-- FORMULÁRIO -->
                 <form
+                    v-else
                     class="flex w-full flex-col gap-[18px] rounded-[26px] border border-iasmin-lilac bg-white p-5 shadow-[0_16px_36px_rgba(90,30,140,0.12)] lg:max-w-[440px] lg:p-6"
                     @submit.prevent="openReview"
                 >

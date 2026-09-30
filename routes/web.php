@@ -7,7 +7,7 @@ use App\Http\Controllers\GiftItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
-Route::inertia('/confirmar', 'Confirm')->name('confirmar');
+Route::get('/confirmar', [ConfirmationController::class, 'create'])->name('confirmar');
 Route::post('/confirmar', [ConfirmationController::class, 'store'])->name('confirmar.store');
 Route::get('/presentes/dados', [GiftItemController::class, 'data'])->name('presentes.data');
 Route::get('/presentes', [GiftItemController::class, 'index'])->name('presentes');
