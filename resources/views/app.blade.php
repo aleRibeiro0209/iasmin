@@ -36,6 +36,14 @@
 
         @fonts
 
+        {{-- Fontes do convite Iasmin (Great Vibes / Bodoni Moda / Lora) --}}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Great+Vibes&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+            rel="stylesheet"
+        >
+
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
