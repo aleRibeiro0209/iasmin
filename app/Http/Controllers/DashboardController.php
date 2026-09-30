@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Confirmation;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,5 +26,15 @@ class DashboardController extends Controller
                 'guests' => (int) Confirmation::query()->where('attending', true)->sum('guests'),
             ],
         ]);
+    }
+
+    /**
+     * Remove one RSVP from the admin list.
+     */
+    public function destroy(Confirmation $confirmation): RedirectResponse
+    {
+        $confirmation->delete();
+
+        return back();
     }
 }

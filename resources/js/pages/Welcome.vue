@@ -187,7 +187,7 @@ const photos = [
                         alt="Iasmin"
                         class="h-[220px] w-[200px] object-cover object-[center_22%] lg:h-[280px] lg:w-[260px]"
                     />
-                    <span class="absolute inset-x-0 bottom-2 text-center font-script text-2xl text-iasmin-purple-deep">nossa borboleta</span>
+                    <span class="absolute inset-x-0 bottom-2 text-center font-script text-2xl text-iasmin-purple-deep">Nossa borboleta</span>
                 </button>
 
                 <p class="iasmin-hero-quote max-w-[318px] text-base italic leading-[1.55] text-iasmin-ink lg:max-w-[28rem] lg:text-[17px]">

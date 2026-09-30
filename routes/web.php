@@ -18,6 +18,7 @@ Route::redirect('painel/presentes', '/gifts');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::delete('confirmations/{confirmation}', [DashboardController::class, 'destroy'])->name('confirmations.destroy');
     Route::get('categories', [GiftCategoryController::class, 'index'])->name('categories.index');
     Route::post('categories', [GiftCategoryController::class, 'store'])->name('categories.store');
     Route::put('categories/{giftCategory}', [GiftCategoryController::class, 'update'])->name('categories.update');

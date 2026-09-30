@@ -3,6 +3,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AdminPagination, { type Paginator } from '@/components/AdminPagination.vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +39,9 @@ const page = usePage();
 const deleteError = computed(() => page.props.errors.delete);
 const open = ref(false);
 const editing = ref<Category | null>(null);
+const pendingDelete = ref<Category | null>(null);
+const deleteName = ref('');
+const deleting = ref(false);
 
 const form = useForm({
     name: '',
@@ -88,8 +92,19 @@ const saveEdit = () => {
     });
 };
 
-const remove = (id: number) => {
-    router.delete(`/categories/${id}`, { preserveScroll: true });
+const confirmDelete = () => {
+    if (!pendingDelete.value) {
+        return;
+    }
+
+    deleting.value = true;
+    router.delete(`/categories/${pendingDelete.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleting.value = false;
+            pendingDelete.value = null;
+        },
+    });
 };
 </script>
 
@@ -186,7 +201,7 @@ const remove = (id: number) => {
                                             size="icon"
                                             class="text-destructive hover:text-destructive"
                                             aria-label="Remover"
-                                            @click="remove(category.id)"
+                                            @click="deleteName = category.name; pendingDelete = category"
                                         >
                                             <Trash2 />
                                         </Button>
@@ -201,6 +216,15 @@ const remove = (id: number) => {
             </div>
             <AdminPagination :paginator="categories" empty-label="0 categorias" />
         </div>
+
+        <ConfirmDeleteDialog
+            :open="pendingDelete !== null"
+            title="Remover categoria"
+            :description="`Remover a categoria ${deleteName}? Essa ação não pode ser desfeita.`"
+            :processing="deleting"
+            @update:open="(isOpen) => !isOpen && (pendingDelete = null)"
+            @confirm="confirmDelete"
+        />
 
         <Dialog :open="editing !== null" @update:open="(isOpen) => !isOpen && closeEdit()">
             <DialogContent>

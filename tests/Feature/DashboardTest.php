@@ -50,6 +50,25 @@ class DashboardTest extends TestCase
         );
     }
 
+    public function test_authenticated_users_can_delete_a_confirmation()
+    {
+        $user = User::factory()->create();
+        $confirmation = Confirmation::create([
+            'name' => 'Ana',
+            'attending' => true,
+            'guests' => 2,
+            'companions' => ['Bia'],
+        ]);
+
+        $this->delete(route('confirmations.destroy', $confirmation))->assertRedirect(route('login'));
+
+        $this->actingAs($user)
+            ->delete(route('confirmations.destroy', $confirmation))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('confirmations', ['id' => $confirmation->id]);
+    }
+
     public function test_dashboard_paginates_confirmations_by_fifteen()
     {
         $user = User::factory()->create();

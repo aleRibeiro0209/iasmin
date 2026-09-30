@@ -3,6 +3,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import { ref, watch } from 'vue';
 import AdminPagination, { type Paginator } from '@/components/AdminPagination.vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,6 +45,9 @@ defineOptions({
 
 const open = ref(false);
 const editing = ref<Gift | null>(null);
+const pendingDelete = ref<Gift | null>(null);
+const deleteName = ref('');
+const deleting = ref(false);
 
 const form = useForm({
     name: '',
@@ -74,8 +78,19 @@ const submit = () => {
     });
 };
 
-const remove = (id: number) => {
-    router.delete(`/gifts/${id}`, { preserveScroll: true });
+const confirmDelete = () => {
+    if (!pendingDelete.value) {
+        return;
+    }
+
+    deleting.value = true;
+    router.delete(`/gifts/${pendingDelete.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleting.value = false;
+            pendingDelete.value = null;
+        },
+    });
 };
 
 const startEdit = (gift: Gift) => {
@@ -234,7 +249,7 @@ const saveEdit = () => {
                                             size="icon"
                                             class="text-destructive hover:text-destructive"
                                             aria-label="Remover"
-                                            @click="remove(gift.id)"
+                                            @click="deleteName = gift.name; pendingDelete = gift"
                                         >
                                             <Trash2 />
                                         </Button>
@@ -249,6 +264,15 @@ const saveEdit = () => {
             </div>
             <AdminPagination :paginator="gifts" empty-label="0 presentes" />
         </div>
+
+        <ConfirmDeleteDialog
+            :open="pendingDelete !== null"
+            title="Remover presente"
+            :description="`Remover o presente ${deleteName}? Essa ação não pode ser desfeita.`"
+            :processing="deleting"
+            @update:open="(isOpen) => !isOpen && (pendingDelete = null)"
+            @confirm="confirmDelete"
+        />
 
         <Dialog :open="editing !== null" @update:open="(isOpen) => !isOpen && closeEdit()">
             <DialogContent>

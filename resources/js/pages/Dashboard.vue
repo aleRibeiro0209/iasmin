@@ -1,6 +1,18 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import { Eye, Trash2 } from '@lucide/vue';
+import { ref } from 'vue';
 import AdminPagination from '@/components/AdminPagination.vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { dashboard } from '@/routes';
 
 interface Confirmation {
@@ -35,6 +47,26 @@ defineOptions({
         breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
     },
 });
+
+const viewing = ref<Confirmation | null>(null);
+const pendingDelete = ref<Confirmation | null>(null);
+const deleteName = ref('');
+const deleting = ref(false);
+
+const confirmDelete = () => {
+    if (!pendingDelete.value) {
+        return;
+    }
+
+    deleting.value = true;
+    router.delete(`/confirmations/${pendingDelete.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleting.value = false;
+            pendingDelete.value = null;
+        },
+    });
+};
 
 const formatDate = (value: string) =>
     new Date(value).toLocaleString('pt-BR', {
@@ -71,7 +103,7 @@ const formatDate = (value: string) =>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[640px] text-left text-sm">
+                <table class="w-full min-w-[720px] text-left text-sm">
                     <thead class="border-b border-sidebar-border/70 text-muted-foreground dark:border-sidebar-border">
                         <tr>
                             <th class="px-4 py-3 font-medium">Nome</th>
@@ -79,11 +111,12 @@ const formatDate = (value: string) =>
                             <th class="px-4 py-3 font-medium">Pessoas</th>
                             <th class="px-4 py-3 font-medium">Recado</th>
                             <th class="px-4 py-3 font-medium">Enviado em</th>
+                            <th class="px-4 py-3 text-right font-medium">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="confirmations.data.length === 0">
-                            <td colspan="5" class="px-4 py-8 text-center text-muted-foreground">
+                            <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">
                                 Nenhuma confirmação recebida ainda.
                             </td>
                         </tr>
@@ -120,6 +153,39 @@ const formatDate = (value: string) =>
                             <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">
                                 {{ formatDate(confirmation.created_at) }}
                             </td>
+                            <td class="px-4 py-3">
+                                <div class="flex justify-end gap-1">
+                                    <Tooltip>
+                                        <TooltipTrigger as-child>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label="Ver"
+                                                @click="viewing = confirmation"
+                                            >
+                                                <Eye />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Ver</TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger as-child>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                class="text-destructive hover:text-destructive"
+                                                aria-label="Remover"
+                                                @click="deleteName = confirmation.name; pendingDelete = confirmation"
+                                            >
+                                                <Trash2 />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Remover</TooltipContent>
+                                    </Tooltip>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -127,5 +193,35 @@ const formatDate = (value: string) =>
 
             <AdminPagination :paginator="confirmations" empty-label="0 confirmações" />
         </div>
+
+        <Dialog :open="viewing !== null" @update:open="(isOpen) => !isOpen && (viewing = null)">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Convidado</DialogTitle>
+                    <DialogDescription>Nome completo e acompanhantes desta confirmação.</DialogDescription>
+                </DialogHeader>
+                <div v-if="viewing" class="grid gap-4 text-sm">
+                    <div>
+                        <p class="text-muted-foreground">Nome</p>
+                        <p class="mt-1 font-medium">{{ viewing.name }}</p>
+                    </div>
+                    <div v-if="viewing.companions?.length">
+                        <p class="text-muted-foreground">Acompanhantes</p>
+                        <ol class="mt-1 list-decimal space-y-1 pl-5 font-medium">
+                            <li v-for="(companion, index) in viewing.companions" :key="index">{{ companion }}</li>
+                        </ol>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        <ConfirmDeleteDialog
+            :open="pendingDelete !== null"
+            title="Remover confirmação"
+            :description="`Remover a confirmação de ${deleteName}? Essa ação não pode ser desfeita.`"
+            :processing="deleting"
+            @update:open="(isOpen) => !isOpen && (pendingDelete = null)"
+            @confirm="confirmDelete"
+        />
     </div>
 </template>
