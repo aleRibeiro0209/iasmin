@@ -50,6 +50,57 @@ class DashboardTest extends TestCase
         );
     }
 
+    public function test_authenticated_users_can_correct_a_guest_and_split_companions()
+    {
+        $user = User::factory()->create();
+        $confirmation = Confirmation::create([
+            'name' => 'Maria',
+            'attending' => true,
+            'guests' => 2,
+            'companions' => ['Ana e João'],
+            'message' => 'Até lá',
+        ]);
+
+        $this->put(route('confirmations.update', $confirmation), [
+            'name' => 'Maria Souza',
+            'companions' => ['Ana Souza', 'João Souza'],
+        ])->assertRedirect(route('login'));
+
+        $this->actingAs($user)
+            ->put(route('confirmations.update', $confirmation), [
+                'name' => 'Maria Souza',
+                'companions' => ['Ana Souza', 'João Souza'],
+            ])
+            ->assertRedirect();
+
+        $confirmation->refresh();
+
+        $this->assertSame('Maria Souza', $confirmation->name);
+        $this->assertSame(['Ana Souza', 'João Souza'], $confirmation->companions);
+        $this->assertSame(3, $confirmation->guests);
+        $this->assertSame('Até lá', $confirmation->message);
+
+        $declined = Confirmation::create([
+            'name' => 'Clara',
+            'attending' => false,
+            'guests' => 0,
+            'companions' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('confirmations.update', $declined), [
+                'name' => 'Clara Dias',
+                'companions' => ['Ignorado'],
+            ])
+            ->assertRedirect();
+
+        $declined->refresh();
+
+        $this->assertSame('Clara Dias', $declined->name);
+        $this->assertSame([], $declined->companions);
+        $this->assertSame(0, $declined->guests);
+    }
+
     public function test_authenticated_users_can_delete_a_confirmation()
     {
         $user = User::factory()->create();
