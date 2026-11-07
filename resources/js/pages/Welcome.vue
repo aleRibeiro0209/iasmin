@@ -6,6 +6,7 @@ import AnimatedButterfly from '@/components/iasmin/AnimatedButterfly.vue';
 import IasminDecor, { type DecorItem } from '@/components/iasmin/IasminDecor.vue';
 import GiftListButton from '@/components/iasmin/GiftListButton.vue';
 import PhotoLightbox from '@/components/iasmin/PhotoLightbox.vue';
+import MapAppPicker from '@/components/iasmin/MapAppPicker.vue';
 
 // Decoração mobile fiel ao HTML de referência (frame 390px de largura).
 // Coordenadas relativas ao topo de cada seção; alturas do reference:
@@ -64,7 +65,25 @@ const eventDate = new Date(2026, 10, 8, 10, 0, 0);
 const partyDay = { dd: '08', month: 'Nov', year: '2026', time: '10:00' };
 const rsvpDeadline = '20 de outubro de 2026, às 23:59';
 const partyAddress = 'Rua Araçoiaba da Serra, 10 - Vau Novo - Cajamar, CEP: 07762230';
-const partyMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Rua Araçoiaba da Serra, 10, Vau Novo, Cajamar, SP, 07762-230')}`;
+// 23,38785° S, 46,92267° W — o pin é o ponto, não uma busca pelo endereço.
+const partyLat = -23.38785;
+const partyLng = -46.92267;
+const partyCoords = `${partyLat},${partyLng}`;
+const mapApps = [
+    { name: 'Mapas do iPhone', href: `https://maps.apple.com/?ll=${partyCoords}&q=${partyCoords}` },
+    { name: 'Google Maps', href: `https://www.google.com/maps/search/?api=1&query=${partyCoords}` },
+    { name: 'Waze', href: `https://waze.com/ul?ll=${partyCoords}` },
+];
+const mapOpen = ref(false);
+
+const openPartyMap = () => {
+    if (/Android/i.test(navigator.userAgent)) {
+        window.location.href = `geo:${partyCoords}?q=${partyCoords}(Festa%20da%20Iasmin)`;
+        return;
+    }
+
+    mapOpen.value = true;
+};
 
 const now = ref(new Date());
 let timer: ReturnType<typeof setInterval> | undefined;
@@ -94,7 +113,9 @@ const closePhoto = () => {
 };
 
 const onKeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') closePhoto();
+    if (event.key !== 'Escape') return;
+    if (openPhoto.value) closePhoto();
+    else mapOpen.value = false;
 };
 
 onMounted(() => {
@@ -107,8 +128,8 @@ onUnmounted(() => {
     document.body.style.overflow = '';
 });
 
-watch(openPhoto, (photo) => {
-    document.body.style.overflow = photo ? 'hidden' : '';
+watch([openPhoto, mapOpen], ([photo, map]) => {
+    document.body.style.overflow = photo || map ? 'hidden' : '';
 });
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -235,11 +256,10 @@ const photos = [
                     </div>
 
                     <!-- Local -->
-                    <a
-                        :href="partyMapUrl"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="flex w-full max-w-[330px] items-center gap-3.5 rounded-[20px] border border-iasmin-lilac bg-white px-5 py-[18px] text-left no-underline shadow-[0_8px_20px_rgba(90,30,140,0.08)] lg:max-w-[420px]"
+                    <button
+                        type="button"
+                        class="flex w-full max-w-[330px] cursor-pointer items-center gap-3.5 rounded-[20px] border border-iasmin-lilac bg-white px-5 py-[18px] text-left shadow-[0_8px_20px_rgba(90,30,140,0.08)] lg:max-w-[420px]"
+                        @click="openPartyMap"
                     >
                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-iasmin-petal">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8A00C4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -252,7 +272,7 @@ const photos = [
                             <span class="text-[15px] font-semibold leading-snug text-iasmin-ink">{{ partyAddress }}</span>
                             <span class="text-sm text-iasmin-purple">Abrir no mapa</span>
                         </div>
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Countdown -->
@@ -405,6 +425,8 @@ const photos = [
             </div>
         </section>
     </div>
+
+    <MapAppPicker v-if="mapOpen" :apps="mapApps" @close="mapOpen = false" />
 
     <GiftListButton />
     <PhotoLightbox v-if="openPhoto" :photo="openPhoto" @close="closePhoto" />
